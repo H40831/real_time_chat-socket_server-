@@ -27,16 +27,34 @@ const moveRooms = function(socket,roomId){
     socket.join(roomId);
 };
 
-const sendMessage = function(socket,name,message){
-    console.log('test');
+const sendMessage = function(socket,dataObject){
+    db.query(
+        'INSERT talk_logs VALUE(null, ?, ?, ?, ?);',
+        Object.values( dataObject ),
+        error => {
+            if(error){
+                socket.emit('notice',error);
+                throw error;
+            }
+        }
+    );
 };
 
 io.sockets.on('connection', function(socket) {
+    const notice = v=>{socket.emit('notice',v)};
+
+    socket.emit('getCurrentRoom');
+
+    notice('websocketに接続した');
+
     socket.on('moveRooms', function(roomId){
         moveRooms(this,roomId);
     });
     socket.on('rooms', function(){
-        socket.emit('notification', socket.rooms);
+        notice(socket.rooms);
+    });
+    socket.on('sendMessage', function(dataObject){
+        sendMessage(this,dataObject)
     });
 });
 
